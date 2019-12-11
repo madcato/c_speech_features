@@ -6,13 +6,129 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define CLAMP(x,y,z) MIN(MAX(x,y),z)
 
+void run_mfcc(short* buffer, unsigned int bufferSize) {
+  FILE *fout=stdout;
+
+  const short* aSignal = buffer;
+  unsigned int aSignalLen = bufferSize;
+  int aSampleRate = 16000;
+  csf_float aWinLen = 0.025;
+  csf_float aWinStep = 0.01;
+  int aNCep = 13;
+  int aNFilters = 26;
+  int aNFFT = 512;
+  int aLowFreq = 0;
+  int aHighFreq = aSampleRate / 2;
+  csf_float aPreemph = 0.97;
+  int aCepLifter = 22;
+  int aAppendEnergy = 1;
+  csf_float* aWinFunc = NULL;
+  csf_float* aMFCC;
+
+  csf_mfcc(aSignal,aSignalLen,aSampleRate,aWinLen,aWinStep,aNCep,aNFilters,aNFFT,aLowFreq,aHighFreq,aPreemph,aCepLifter,aAppendEnergy,aWinFunc,&aMFCC);
+
+  printf("Hola hola");
+}
+
+// WAVE PCM soundfile format (you can find more in https://ccrma.stanford.edu/courses/422/projects/WaveFormat/ )
+//Wav Header
+struct wav_header_t
+{
+    char chunkID[4]; //"RIFF" = 0x46464952
+    int chunkSize; //28 [+ sizeof(wExtraFormatBytes) + wExtraFormatBytes] + sum(sizeof(chunk.id) + sizeof(chunk.size) + chunk.size)
+    char format[4]; //"WAVE" = 0x45564157
+    char subchunk1ID[4]; //"fmt " = 0x20746D66
+    int subchunk1Size; //16 [+ sizeof(wExtraFormatBytes) + wExtraFormatBytes]
+    short int audioFormat;
+    short int numChannels;
+    int sampleRate;
+    int byteRate;
+    unsigned short int blockAlign;
+    unsigned short int bitsPerSample;
+    //[WORD wExtraFormatBytes;]
+    //[Extra format bytes]
+};
+
+//Chunks
+struct chunk_t
+{
+  char ID[4]; //"data" = 0x61746164
+//  unsigned int size;  //Chunk data bytes
+};
+
+int load(char *fileName, short** output) {
+    FILE *fin = fopen(fileName, "rb");
+
+    //Read WAV header
+    struct wav_header_t header;
+    fread(&header, sizeof(header), 1, fin);
+
+    //Print WAV header
+    printf("WAV File Header read:\n");
+    printf("File Type: %s\n", header.chunkID);
+    printf("File Size: %ld\n", header.chunkSize);
+    printf("WAV Marker: %s\n", header.format);
+    printf("Format Name: %s\n", header.subchunk1ID);
+    printf("Format Length: %ld\n", header.subchunk1Size );
+    printf("Format Type: %hd\n", header.audioFormat);
+    printf("Number of Channels: %hd\n", header.numChannels);
+    printf("Sample Rate: %ld\n", header.sampleRate);
+    printf("Sample Rate * Bits/Sample * Channels / 8: %ld\n", header.byteRate);
+    printf("Bits per Sample * Channels / 8.1: %hd\n", header.blockAlign);
+    printf("Bits per Sample: %hd\n", header.bitsPerSample);
+
+    //skip wExtraFormatBytes & extra format bytes
+    //fseek(f, header.chunkSize - 16, SEEK_CUR);
+
+  long samples_count = 0;
+  long sample_size = 1;
+    //Reading file
+    struct chunk_t chunk;
+    printf("id\t" "size\n");
+    //go to data chunk
+    int cont = 1;
+    while(cont == 1) {
+        fread(&chunk, sizeof(chunk), 1, fin);
+//        printf("%c%c%c%c\t" "%i\n", chunk.ID[0], chunk.ID[1], chunk.ID[2], chunk.ID[3], chunk.size);
+      if (*(unsigned int *)&chunk.ID == 0x61746164) {
+         int size = 0;
+        fread(&size, sizeof( int), 1, fin);
+        samples_count = size;
+        break;
+      }
+        //skip chunk data bytes
+//        fseek(fin, chunk.size, SEEK_CUR);
+    }
+
+  //Number of samples
+//  int sample_size = header.bitsPerSample / 8;
+//  int samples_count = chunk.size * 8 / header.bitsPerSample;
+//  printf("Samples count = %i\n", samples_count);
+
+  short int *value = malloc(header.chunkSize);
+  memset(value, 0, header.chunkSize);
+
+  //Reading data
+  for (int i = 0; i < samples_count; i++) {
+    if(!fread(&value[i], sample_size, 1, fin)) {
+      printf("%i", i);
+      break;
+    }
+  }
+
+  fclose(fin);
+
+  *output = value;
+  return samples_count;
+}
+
+
 int
 csf_mfcc(const short* aSignal, unsigned int aSignalLen, int aSampleRate,
          csf_float aWinLen, csf_float aWinStep, int aNCep, int aNFilters,
          int aNFFT, int aLowFreq, int aHighFreq, csf_float aPreemph,
          int aCepLifter, int aAppendEnergy, csf_float* aWinFunc,
-         csf_float** aMFCC)
-{
+         csf_float** aMFCC) {
   int i, j, k, idx, fidx, didx;
   csf_float* feat;
   csf_float* energy;
