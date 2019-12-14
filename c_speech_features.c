@@ -129,7 +129,7 @@ csf_mfcc(const short* aSignal, unsigned int aSignalLen, int aSampleRate,
          csf_float** aMFCC) {
   int i, j, k, idx, fidx, didx;
   csf_float* feat;
-  csf_float* energy;
+  csf_float* energy = NULL;
 
   int n_frames = csf_logfbank(aSignal, aSignalLen, aSampleRate, aWinLen, aWinStep,
                               aNFilters, aNFFT, aLowFreq, aHighFreq, aPreemph,
@@ -195,7 +195,7 @@ csf_fbank(const short* aSignal, unsigned int aSignalLen, int aSampleRate,
   csf_float* fbank;
   csf_float* pspec;
   csf_float* frames;
-  csf_float* energy;
+  csf_float* energy = NULL;
   csf_float* preemph = csf_preemphasis(aSignal, aSignalLen, aPreemph);
   int frame_len = (int)round(aWinLen * aSampleRate);
   int frame_step = (int)round(aWinStep * aSampleRate);

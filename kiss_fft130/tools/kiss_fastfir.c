@@ -45,11 +45,6 @@ kiss_fastfir_cfg kiss_fastfir_alloc(const kffsamp_t * imp_resp,size_t n_imp_resp
 /* see do_file_filter for usage */
 size_t kiss_fastfir( kiss_fastfir_cfg cfg, kffsamp_t * inbuf, kffsamp_t * outbuf, size_t n, size_t *offset);
 
-
-
-static int verbose=0;
-
-
 struct kiss_fastfir_state{
     size_t nfft;
     size_t ngood;
@@ -97,13 +92,13 @@ kiss_fastfir_cfg kiss_fastfir_alloc(
 #ifdef REAL_FASTFIR
     n_freq_bins = nfft/2 + 1;
 #else
-    n_freq_bins = nfft;
+    n_freq_bins = (int)nfft;
 #endif
     /*fftcfg*/
-    FFT_ALLOC (nfft, 0, NULL, &len_fftcfg);
+    FFT_ALLOC ((int)nfft, 0, NULL, &len_fftcfg);
     memneeded += len_fftcfg;  
     /*ifftcfg*/
-    FFT_ALLOC (nfft, 1, NULL, &len_ifftcfg);
+    FFT_ALLOC ((int)nfft, 1, NULL, &len_ifftcfg);
     memneeded += len_ifftcfg;  
     /* tmpbuf */
     memneeded += sizeof(kffsamp_t) * nfft;
@@ -142,8 +137,8 @@ kiss_fastfir_cfg kiss_fastfir_alloc(
     st->fir_freq_resp = (kiss_fft_cpx*)ptr;
     ptr += sizeof(kiss_fft_cpx) * n_freq_bins;
 
-    FFT_ALLOC (nfft,0,st->fftcfg , &len_fftcfg);
-    FFT_ALLOC (nfft,1,st->ifftcfg , &len_ifftcfg);
+    FFT_ALLOC ((int)nfft,0,st->fftcfg , &len_fftcfg);
+    FFT_ALLOC ((int)nfft,1,st->ifftcfg , &len_ifftcfg);
 
     memset(st->tmpbuf,0,sizeof(kffsamp_t)*nfft);
     /*zero pad in the middle to left-rotate the impulse response 
@@ -362,9 +357,6 @@ void do_file_filter(
     n_samps_buf = 8*4096/sizeof(kffsamp_t); 
     n_samps_buf = nfft + 4*(nfft-n_imp_resp+1);
 
-    if (verbose) fprintf(stderr,"bufsize=%d\n",(int)(sizeof(kffsamp_t)*n_samps_buf) );
-     
-
     /*allocate space and initialize pointers */
     inbuf = (kffsamp_t*)malloc(sizeof(kffsamp_t)*n_samps_buf);
     outbuf = (kffsamp_t*)malloc(sizeof(kffsamp_t)*n_samps_buf);
@@ -402,7 +394,6 @@ int main(int argc,char**argv)
         if (c==-1) break;
         switch (c) {
             case 'v':
-                verbose=1;
                 break;
             case 'n':
                 nfft=atoi(optarg);
@@ -449,7 +440,6 @@ int main(int argc,char**argv)
     }
     fseek(filtfile,0,SEEK_END);
     nh = ftell(filtfile) / sizeof(kffsamp_t);
-    if (verbose) fprintf(stderr,"%d samples in FIR filter\n",(int)nh);
     h = (kffsamp_t*)malloc(sizeof(kffsamp_t)*nh);
     fseek(filtfile,0,SEEK_SET);
     if (fread(h,sizeof(kffsamp_t),nh,filtfile) != nh)
