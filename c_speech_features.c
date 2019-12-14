@@ -6,7 +6,7 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define CLAMP(x,y,z) MIN(MAX(x,y),z)
 
-void run_mfcc(short* buffer, unsigned int bufferSize) {
+int run_mfcc(short* buffer, unsigned int bufferSize, float** result) {
   const short* aSignal = buffer;
   unsigned int aSignalLen = bufferSize;
   int aSampleRate = 16000;
@@ -23,9 +23,9 @@ void run_mfcc(short* buffer, unsigned int bufferSize) {
   csf_float* aWinFunc = NULL;
   csf_float* aMFCC;
 
-  csf_mfcc(aSignal,aSignalLen,aSampleRate,aWinLen,aWinStep,aNCep,aNFilters,aNFFT,aLowFreq,aHighFreq,aPreemph,aCepLifter,aAppendEnergy,aWinFunc,&aMFCC);
-
-  printf("Hola hola");
+  int count = csf_mfcc(aSignal,aSignalLen,aSampleRate,aWinLen,aWinStep,aNCep,aNFilters,aNFFT,aLowFreq,aHighFreq,aPreemph,aCepLifter,aAppendEnergy,aWinFunc,&aMFCC);
+  *result = aMFCC;
+  return count;
 }
 
 // WAVE PCM soundfile format (you can find more in https://ccrma.stanford.edu/courses/422/projects/WaveFormat/ )
