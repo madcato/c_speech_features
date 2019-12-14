@@ -7,8 +7,6 @@
 #define CLAMP(x,y,z) MIN(MAX(x,y),z)
 
 void run_mfcc(short* buffer, unsigned int bufferSize) {
-  FILE *fout=stdout;
-
   const short* aSignal = buffer;
   unsigned int aSignalLen = bufferSize;
   int aSampleRate = 16000;
@@ -56,49 +54,49 @@ struct chunk_t
 //  unsigned int size;  //Chunk data bytes
 };
 
-int load(char *fileName, short** output) {
-    FILE *fin = fopen(fileName, "rb");
+long load(char *fileName, short** output) {
+  FILE *fin = fopen(fileName, "rb");
 
-    //Read WAV header
-    struct wav_header_t header;
-    fread(&header, sizeof(header), 1, fin);
+  //Read WAV header
+  struct wav_header_t header;
+  fread(&header, sizeof(header), 1, fin);
 
-    //Print WAV header
-    printf("WAV File Header read:\n");
-    printf("File Type: %s\n", header.chunkID);
-    printf("File Size: %ld\n", header.chunkSize);
-    printf("WAV Marker: %s\n", header.format);
-    printf("Format Name: %s\n", header.subchunk1ID);
-    printf("Format Length: %ld\n", header.subchunk1Size );
-    printf("Format Type: %hd\n", header.audioFormat);
-    printf("Number of Channels: %hd\n", header.numChannels);
-    printf("Sample Rate: %ld\n", header.sampleRate);
-    printf("Sample Rate * Bits/Sample * Channels / 8: %ld\n", header.byteRate);
-    printf("Bits per Sample * Channels / 8.1: %hd\n", header.blockAlign);
-    printf("Bits per Sample: %hd\n", header.bitsPerSample);
+  //Print WAV header
+  printf("WAV File Header read:\n");
+  printf("File Type: %s\n", header.chunkID);
+  printf("File Size: %d\n", header.chunkSize);
+  printf("WAV Marker: %s\n", header.format);
+  printf("Format Name: %s\n", header.subchunk1ID);
+  printf("Format Length: %d\n", header.subchunk1Size );
+  printf("Format Type: %hd\n", header.audioFormat);
+  printf("Number of Channels: %hd\n", header.numChannels);
+  printf("Sample Rate: %d\n", header.sampleRate);
+  printf("Sample Rate * Bits/Sample * Channels / 8: %d\n", header.byteRate);
+  printf("Bits per Sample * Channels / 8.1: %hd\n", header.blockAlign);
+  printf("Bits per Sample: %hd\n", header.bitsPerSample);
 
-    //skip wExtraFormatBytes & extra format bytes
-    //fseek(f, header.chunkSize - 16, SEEK_CUR);
+  //skip wExtraFormatBytes & extra format bytes
+  //fseek(f, header.chunkSize - 16, SEEK_CUR);
 
-  long samples_count = 0;
-  long sample_size = 1;
-    //Reading file
-    struct chunk_t chunk;
-    printf("id\t" "size\n");
-    //go to data chunk
-    int cont = 1;
-    while(cont == 1) {
-        fread(&chunk, sizeof(chunk), 1, fin);
+long samples_count = 0;
+long sample_size = 1;
+  //Reading file
+  struct chunk_t chunk;
+  printf("id\t" "size\n");
+  //go to data chunk
+  int cont = 1;
+  while(cont == 1) {
+      fread(&chunk, sizeof(chunk), 1, fin);
 //        printf("%c%c%c%c\t" "%i\n", chunk.ID[0], chunk.ID[1], chunk.ID[2], chunk.ID[3], chunk.size);
-      if (*(unsigned int *)&chunk.ID == 0x61746164) {
-         int size = 0;
-        fread(&size, sizeof( int), 1, fin);
-        samples_count = size;
-        break;
-      }
-        //skip chunk data bytes
-//        fseek(fin, chunk.size, SEEK_CUR);
+    if (*(unsigned int *)&chunk.ID == 0x61746164) {
+       int size = 0;
+      fread(&size, sizeof( int), 1, fin);
+      samples_count = size;
+      break;
     }
+      //skip chunk data bytes
+//        fseek(fin, chunk.size, SEEK_CUR);
+  }
 
   //Number of samples
 //  int sample_size = header.bitsPerSample / 8;
